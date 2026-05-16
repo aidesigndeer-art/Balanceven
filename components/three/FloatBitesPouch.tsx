@@ -28,8 +28,8 @@ export interface FloatBitesPouchProps {
   cursor?: { x: number; y: number };
 }
 
-const POUCH_W = 1.4;
-const POUCH_H = 2.05;
+const POUCH_W = 1.7;
+const POUCH_H = 2.15;
 
 /**
  * Front-facing pouch geometry: a high-segment PlaneGeometry with each
@@ -61,14 +61,16 @@ function makeProceduralGeometry() {
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i);
     const y = pos.getY(i);
-    // Layered crumple — coarse + fine.
+    // Layered crumple — coarse + fine, modest amplitude.
     const n1 = noise(x * 3.5, y * 3.5) - 0.5;
     const n2 = noise(x * 16.0, y * 16.0) - 0.5;
-    const crumple = n1 * 0.06 + n2 * 0.02;
-    // Convex belly: parabolic in x with mild attenuation toward seal at top.
-    const belly = (1 - (x / (POUCH_W / 2)) ** 2) * 0.12;
-    const sealFade = 1 - Math.max(0, (y - 0.85) / 0.2);
-    pos.setZ(i, crumple + belly * sealFade);
+    const crumple = n1 * 0.045 + n2 * 0.014;
+    // Convex belly: parabolic in x with mild attenuation toward the
+    // sealed crimp at the top and toward the gusset at the bottom.
+    const belly = (1 - (x / (POUCH_W / 2)) ** 2) * 0.10;
+    const topFade = 1 - Math.max(0, (y - 0.6) / 0.45);
+    const bottomFade = 1 - Math.max(0, (-y - 0.85) / 0.2);
+    pos.setZ(i, crumple + belly * topFade * bottomFade);
   }
   pos.needsUpdate = true;
   geo.computeVertexNormals();

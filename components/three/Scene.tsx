@@ -21,7 +21,7 @@ export function Scene({ children, className }: SceneProps) {
       <Canvas
         dpr={[1, 2]}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-        camera={{ position: [0, 0, 3.6], fov: 32 }}
+        camera={{ position: [0, 0, 5.2], fov: 28 }}
         style={{ background: 'transparent' }}
       >
         <ambientLight intensity={0.45} />

@@ -7,14 +7,13 @@ import { Color, Texture, Vector2 } from 'three';
 /**
  * Holographic-foil ShaderMaterial.
  *
- * Approximates thin-film interference by cycling a 3-channel cosine
- * palette over view-angle dot product, then perturbs the phase with
- * high-frequency value noise to suggest crumpled foil. A Fresnel rim
- * pushes the silhouette toward white. The label texture (premultiplied
- * dark text over alpha) composites on top.
- *
- * No bona-fide thin-film physics here — the math is shaped to read
- * "iridescent" within the brand's blue / cyan / magenta / pink band.
+ * Renders a stand-up zip pouch silhouette (SDF: rounded body + small
+ * hangtag tab with a hole + gusset strip at the bottom) and shades it
+ * with a pastel iridescent foil — soft cyan / blue / pink / magenta —
+ * driven by view angle and a coarse fbm field. A second, high-frequency
+ * noise affects only micro-brightness (not hue), so the foil reads as
+ * crumpled metal rather than a thermal map. The Coolvetica-outline
+ * label composites on top.
  */
 const HolographicMaterialImpl = shaderMaterial(
   {
@@ -29,11 +28,9 @@ const HolographicMaterialImpl = shaderMaterial(
     varying vec3 vWorldNormal;
     varying vec3 vViewDir;
     varying vec2 vUv;
-    varying vec3 vWorldPos;
 
     void main() {
       vec4 worldPos = modelMatrix * vec4(position, 1.0);
-      vWorldPos = worldPos.xyz;
       vWorldNormal = normalize(mat3(modelMatrix) * normal);
       vViewDir = normalize(cameraPosition - worldPos.xyz);
       vUv = uv;
@@ -53,9 +50,29 @@ const HolographicMaterialImpl = shaderMaterial(
     varying vec3 vWorldNormal;
     varying vec3 vViewDir;
     varying vec2 vUv;
-    varying vec3 vWorldPos;
 
-    // Hash & value noise (Inigo Quilez style).
+    // ---- 2D SDF helpers ------------------------------------------------
+    float sdRoundedBox(vec2 p, vec2 b, float r) {
+      vec2 d = abs(p) - b + vec2(r);
+      return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0) - r;
+    }
+
+    // Stand-up zip pouch silhouette in UV space.
+    //   - Body: rounded rectangle (the bulk of the pouch front)
+    //   - Tab:  short rounded rectangle above the body (hangtag area)
+    //   - Hole: small circular notch in the tab
+    //   - Gusset: slightly wider strip at the bottom hinting at the base
+    float pouchSdf(vec2 uv) {
+      vec2 p = uv - vec2(0.5, 0.5);
+      float body   = sdRoundedBox(p - vec2(0.0, -0.05), vec2(0.42, 0.40), 0.05);
+      float gusset = sdRoundedBox(p - vec2(0.0, -0.43), vec2(0.44, 0.04), 0.04);
+      float tab    = sdRoundedBox(p - vec2(0.0,  0.41), vec2(0.20, 0.05), 0.025);
+      float hole   = length(uv - vec2(0.5, 0.92)) - 0.014;
+      float shape  = min(min(body, gusset), tab);
+      return max(shape, -hole);
+    }
+
+    // ---- Noise ---------------------------------------------------------
     float hash(vec2 p) {
       return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
     }
@@ -64,8 +81,8 @@ const HolographicMaterialImpl = shaderMaterial(
       vec2 f = fract(p);
       vec2 u = f * f * (3.0 - 2.0 * f);
       return mix(
-        mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
-        mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x),
+        mix(hash(i),                hash(i + vec2(1.0, 0.0)), u.x),
+        mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0, 1.0)), u.x),
         u.y
       );
     }
@@ -80,49 +97,60 @@ const HolographicMaterialImpl = shaderMaterial(
       return v;
     }
 
-    // 3-channel cosine palette cycling through cyan / magenta / pink / blue.
-    vec3 iridescence(float t) {
-      vec3 a = vec3(0.5, 0.5, 0.55);
-      vec3 b = vec3(0.5, 0.5, 0.5);
-      vec3 c = vec3(1.0, 1.0, 1.0);
-      vec3 d = vec3(0.0, 0.18, 0.42); // phase offsets
+    // ---- Palette -------------------------------------------------------
+    // Pastel iridescent band. Cosine palette with a high baseline and a
+    // small amplitude so the result stays in [0.65, 0.95] per channel —
+    // soft blue / cyan / pink / magenta rather than primary RGB.
+    vec3 pastelIris(float t) {
+      vec3 a = vec3(0.80, 0.82, 0.88);  // base lightness (pastel center)
+      vec3 b = vec3(0.13, 0.10, 0.10);  // small amplitude
+      vec3 c = vec3(1.00, 1.00, 1.00);
+      vec3 d = vec3(0.00, 0.16, 0.38);  // phase offsets — biases toward cool
       return a + b * cos(6.28318 * (c * t + d));
     }
 
     void main() {
+      // ---- Silhouette mask -------------------------------------------
+      float sdf = pouchSdf(vUv);
+      if (sdf > 0.0) discard;
+
       vec3 N = normalize(vWorldNormal);
       vec3 V = normalize(vViewDir);
       float NdotV = clamp(dot(N, V), 0.0, 1.0);
 
-      // Crumple field — two octaves, second one very high frequency.
-      float crumple = fbm(vUv * 6.0) * 0.55 + vnoise(vUv * 90.0) * 0.18;
+      // ---- Color phase: view angle + coarse fbm + slow drift --------
+      // Coarse drives the iridescent hue (large, smooth color blobs).
+      // High-freq noise NEVER touches hue — only micro-brightness.
+      float coarse = fbm(vUv * 3.5);
+      float micro  = vnoise(vUv * 80.0);
 
-      // Anisotropic horizontal seal band near the top (vUv.y -> ~0.96)
-      float seal = smoothstep(0.94, 0.99, vUv.y) - smoothstep(0.99, 1.0, vUv.y);
-
-      // Phase: combine view angle, crumple, slow drift, cursor parallax.
-      float t = (1.0 - NdotV) * 0.85
-              + crumple * 0.8
-              + uTime * 0.03
+      float t = (1.0 - NdotV) * 0.55
+              + coarse * 0.40
+              + uTime * 0.020
               + uHueShift
-              + (uCursor.x + uCursor.y) * 0.08;
+              + (uCursor.x * 0.05 + uCursor.y * 0.03);
 
-      vec3 foil = iridescence(t) * uTint;
+      vec3 foil = pastelIris(t) * uTint;
 
-      // Fresnel rim pushes silhouette to white.
-      float fresnel = pow(1.0 - NdotV, 2.5);
-      foil = mix(foil, vec3(1.0), fresnel * 0.45);
+      // Micro: ±8% luminance variation, no hue shift.
+      foil *= 0.92 + (micro - 0.5) * 0.16;
 
-      // Seal highlight.
-      foil += seal * vec3(0.9);
+      // ---- Fresnel rim -----------------------------------------------
+      float fresnel = pow(1.0 - NdotV, 2.8);
+      foil = mix(foil, vec3(1.0), fresnel * 0.28);
 
-      // Composite label (dark paths with alpha).
+      // ---- Sealed crimp band -----------------------------------------
+      // Just below the tab (vUv.y ~ 0.82 – 0.86). A thin darker band
+      // with a slight bright top edge reads as a crimped seal.
+      float crimpBody  = smoothstep(0.815, 0.83, vUv.y) - smoothstep(0.85, 0.865, vUv.y);
+      float crimpEdge  = smoothstep(0.828, 0.835, vUv.y) - smoothstep(0.838, 0.845, vUv.y);
+      foil = mix(foil, foil * 0.82, crimpBody * 0.55);
+      foil = mix(foil, vec3(0.95), crimpEdge * 0.5);
+
+      // ---- Label composite -------------------------------------------
       vec4 label = texture2D(uLabel, vUv);
       float mask = label.a * uLabelStrength;
       vec3 col = mix(foil, label.rgb, mask);
-
-      // Slight contrast lift to make the foil pop on dark bg.
-      col = pow(col, vec3(0.95));
 
       gl_FragColor = vec4(col, 1.0);
     }
@@ -133,7 +161,6 @@ extend({ HolographicMaterial: HolographicMaterialImpl });
 
 export { HolographicMaterialImpl as HolographicMaterial };
 
-// Augment R3F's JSX for the custom element.
 declare module '@react-three/fiber' {
   interface ThreeElements {
     holographicMaterial: ReactThreeFiber.Object3DNode<
@@ -143,5 +170,4 @@ declare module '@react-three/fiber' {
   }
 }
 
-// ReactThreeFiber import is type-only and erased; redeclare here for safety.
 import type { ReactThreeFiber } from '@react-three/fiber';
