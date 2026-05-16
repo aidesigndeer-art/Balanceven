@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import '@fontsource-variable/space-grotesk';
 import '@fontsource-variable/inter';
 import { ThemeProvider } from '@/lib/theme';
+import { Nav } from '@/components/ui/Nav';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -30,7 +31,10 @@ export default function RootLayout({
   return (
     <html lang="en" data-theme="dark">
       <body>
-        <ThemeProvider initial="dark">{children}</ThemeProvider>
+        <ThemeProvider initial="dark">
+          <Nav />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

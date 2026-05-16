@@ -11,31 +11,32 @@
     "wordmark": "node scripts/build-wordmark.mjs"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "^5.1.0",
+    "@fontsource-variable/space-grotesk": "^5.1.0",
+    "@react-three/drei": "^9.117.3",
+    "@react-three/fiber": "^8.17.10",
+    "clsx": "^2.1.1",
+    "framer-motion": "^11.11.17",
+    "gsap": "^3.12.5",
+    "lenis": "^1.1.18",
     "next": "^14.2.20",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "three": "^0.169.0",
-    "@react-three/fiber": "^8.17.10",
-    "@react-three/drei": "^9.117.3",
-    "gsap": "^3.12.5",
-    "lenis": "^1.1.18",
-    "framer-motion": "^11.11.17",
-    "clsx": "^2.1.1",
-    "@fontsource-variable/space-grotesk": "^5.1.0",
-    "@fontsource-variable/inter": "^5.1.0"
+    "zustand": "^5.0.13"
   },
   "devDependencies": {
-    "typescript": "^5.6.3",
+    "@types/node": "^22.9.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
-    "@types/node": "^22.9.0",
     "@types/three": "^0.169.0",
-    "tailwindcss": "^3.4.14",
-    "postcss": "^8.4.49",
     "autoprefixer": "^10.4.20",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.20",
-    "opentype.js": "^1.3.4"
+    "opentype.js": "^1.3.4",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.14",
+    "typescript": "^5.6.3"
   },
   "packageManager": "pnpm@11.1.2"
 }

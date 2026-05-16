@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import Link from 'next/link';
 import { Wordmark } from './Wordmark';
+import { useCart } from '@/lib/store/cart';
 
 const LINKS = [
   { href: '/shop', label: 'Shop' },
@@ -18,7 +20,14 @@ const SCROLL_THRESHOLD = 32;
 export function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-  const [cartCount] = useState(0);
+  const pathname = usePathname();
+  const cartCount = useCart((s) => s.quantity);
+
+  // Nav is only allowed to be transparent over the hero on the home
+  // page. Every other route has content starting at the top, so the
+  // nav must read as solid from the first paint.
+  const allowTransparent = pathname === '/';
+  const solid = !allowTransparent || scrolled || open;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > SCROLL_THRESHOLD);
@@ -42,7 +51,7 @@ export function Nav() {
       <header
         className={clsx(
           'fixed inset-x-0 top-0 z-50 transition-colors duration-500 ease-silk',
-          scrolled || open ? 'bg-ink/90 backdrop-blur-md' : 'bg-transparent',
+          solid ? 'bg-ink/90 backdrop-blur-md' : 'bg-transparent',
         )}
       >
         <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 md:h-20 md:px-10">
