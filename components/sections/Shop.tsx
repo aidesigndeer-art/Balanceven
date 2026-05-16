@@ -1,43 +1,63 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
 import clsx from 'clsx';
 import { Scene } from '@/components/three/Scene';
 import { FloatBitesPouch } from '@/components/three/FloatBitesPouch';
 import { FlyingGummies } from '@/components/three/FlyingGummies';
 import { MagneticButton } from '@/components/ui/MagneticButton';
-import { useCart, priceFor, UNIT_PRICE_INR } from '@/lib/store/cart';
+import {
+  useCartStore,
+  selectTotalPrice,
+  UNIT_PRICE_INR,
+  FREE_SHIPPING_THRESHOLD,
+  FLOAT_BITES_SKU,
+} from '@/lib/store/cart';
 import { useCursor } from '@/lib/hooks/useCursor';
 
-const formatINR = (rupees: number) =>
-  `₹${rupees.toLocaleString('en-IN')}`;
+const formatINR = (rupees: number) => `₹${rupees.toLocaleString('en-IN')}`;
+
+const FLOAT_BITES_ITEM = {
+  sku: FLOAT_BITES_SKU,
+  name: 'Float Bites',
+  price: UNIT_PRICE_INR,
+} as const;
 
 /**
  * §6.11 — Shop block.
- * Two columns: interactive pouch + flying gummies left, product card
- * right. Cart state lives in Zustand so /checkout sees the same values.
+ *
+ * Quantity here is PDP-local — it's the amount the user is about to
+ * add. `Add to cart` increments the existing line by that amount
+ * (addItem dedupes by SKU and bumps quantity). The cart total in the
+ * Nav badge reflects what's accumulated across this and any prior add.
  */
 export function Shop() {
   const sectionRef = useRef<HTMLElement>(null);
   const router = useRouter();
   const cursor = useCursor(sectionRef);
 
-  const quantity = useCart((s) => s.quantity);
-  const subscribe = useCart((s) => s.subscribe);
-  const setQuantity = useCart((s) => s.setQuantity);
-  const toggleSubscribe = useCart((s) => s.toggleSubscribe);
+  const [quantity, setQuantity] = useState(1);
+  const addItem = useCartStore((s) => s.addItem);
+  const cartTotalPrice = useCartStore(selectTotalPrice);
 
-  const { subtotal, total, freeShipping } = priceFor(quantity, subscribe);
+  // What the basket would look like *if* the user clicks add right now.
+  // Drives the shipping line so the message is honest about the next
+  // click, not the current cart.
+  const projectedTotal = cartTotalPrice + quantity * UNIT_PRICE_INR;
+  const projectedFreeShipping = projectedTotal >= FREE_SHIPPING_THRESHOLD;
+  const remainingForFreeShipping = Math.max(
+    FREE_SHIPPING_THRESHOLD - projectedTotal,
+    0,
+  );
 
   const onAddToCart = () => {
-    // Cart already reflects the current selection via Zustand;
-    // a real backend call would land here.
-    alert(`Added to cart — ${quantity} × Float Bites (₹${total})`);
+    addItem({ ...FLOAT_BITES_ITEM, quantity });
+    alert(`Added ${quantity} × Float Bites to cart`);
   };
 
   const onBuyNow = () => {
+    addItem({ ...FLOAT_BITES_ITEM, quantity });
     router.push('/checkout');
   };
 
@@ -50,7 +70,7 @@ export function Shop() {
       aria-labelledby="shop-heading"
     >
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-12 px-6 md:grid-cols-12 md:gap-8 md:px-10">
-        {/* Pouch + gummies column */}
+        {/* Pouch + gummies */}
         <div className="relative h-[60vh] w-full md:col-span-6 md:h-[78vh]">
           <Scene className="absolute inset-0 h-full w-full">
             <FloatBitesPouch cursor={cursor} scale={0.95} />
@@ -90,7 +110,7 @@ export function Shop() {
               <QtyButton
                 aria-label="Decrease quantity"
                 disabled={quantity <= 1}
-                onClick={() => setQuantity(quantity - 1)}
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
               >
                 −
               </QtyButton>
@@ -103,40 +123,12 @@ export function Shop() {
               <QtyButton
                 aria-label="Increase quantity"
                 disabled={quantity >= 10}
-                onClick={() => setQuantity(quantity + 1)}
+                onClick={() => setQuantity((q) => Math.min(10, q + 1))}
               >
                 +
               </QtyButton>
             </div>
           </div>
-
-          {/* Subscribe toggle */}
-          <button
-            type="button"
-            onClick={toggleSubscribe}
-            aria-pressed={subscribe}
-            className={clsx(
-              'mt-6 inline-flex w-fit items-center gap-3 rounded-full border px-5 py-2.5 font-body text-sm transition-colors duration-300 ease-silk',
-              subscribe
-                ? 'border-paper bg-paper text-ink'
-                : 'border-paper/30 text-paper hover:border-paper/60',
-            )}
-          >
-            <motion.span
-              animate={{ scale: subscribe ? 1 : 0.6, opacity: subscribe ? 1 : 0.5 }}
-              transition={{ duration: 0.2 }}
-              className={clsx(
-                'block h-2 w-2 rounded-full',
-                subscribe ? 'bg-ink' : 'bg-paper/50',
-              )}
-            />
-            Subscribe &amp; save 15%
-            {subscribe && (
-              <span className="font-display text-xs tabular-nums">
-                {formatINR(subtotal - total)} off
-              </span>
-            )}
-          </button>
 
           {/* CTAs */}
           <div className="mt-8 flex flex-wrap items-center gap-4">
@@ -152,12 +144,15 @@ export function Shop() {
           <p
             className={clsx(
               'mt-6 font-body text-sm transition-colors',
-              freeShipping ? 'text-paper/90' : 'text-paper/55',
+              projectedFreeShipping ? 'text-paper/90' : 'text-paper/55',
             )}
           >
-            {freeShipping
+            {projectedFreeShipping
               ? 'Free shipping unlocked.'
-              : `Free shipping on orders over ${formatINR(500)}.`}
+              : `Free shipping on orders over ${formatINR(FREE_SHIPPING_THRESHOLD)}` +
+                (remainingForFreeShipping > 0 && cartTotalPrice > 0
+                  ? ` — ${formatINR(remainingForFreeShipping)} to go.`
+                  : '.')}
           </p>
           <p className="mt-2 font-body text-xs uppercase tracking-[0.22em] text-paper/40">
             Made in India

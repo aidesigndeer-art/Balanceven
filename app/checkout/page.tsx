@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { MagneticButton } from '@/components/ui/MagneticButton';
 import {
-  useCart,
-  priceFor,
-  UNIT_PRICE_INR,
+  useCartStore,
+  selectItems,
+  selectTotalPrice,
   FREE_SHIPPING_THRESHOLD,
 } from '@/lib/store/cart';
 
@@ -24,23 +24,36 @@ interface Form {
 const EMPTY: Form = { name: '', email: '', address: '', city: '', pincode: '' };
 
 export default function CheckoutPage() {
-  const quantity = useCart((s) => s.quantity);
-  const subscribe = useCart((s) => s.subscribe);
+  const items = useCartStore(selectItems);
+  const totalPrice = useCartStore(selectTotalPrice);
+  const clearCart = useCartStore((s) => s.clearCart);
   const [form, setForm] = useState<Form>(EMPTY);
   const [placed, setPlaced] = useState(false);
+  const [placedTotal, setPlacedTotal] = useState(0);
+  const [placedUnits, setPlacedUnits] = useState(0);
 
-  const { subtotal, total, freeShipping } = priceFor(quantity, subscribe);
-  const savings = subtotal - total;
+  const freeShipping = totalPrice >= FREE_SHIPPING_THRESHOLD;
+  const remainingForFreeShipping = Math.max(
+    FREE_SHIPPING_THRESHOLD - totalPrice,
+    0,
+  );
 
-  const set = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }));
+  const set =
+    (k: keyof Form) =>
+    (e: React.ChangeEvent<HTMLInputElement>) =>
+      setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
+    const totalUnits = items.reduce((n, i) => n + i.quantity, 0);
     const order = {
-      items: [{ sku: 'float-bites-10ct', quantity, unitPrice: UNIT_PRICE_INR }],
-      subscribe,
-      total,
+      items: items.map((i) => ({
+        sku: i.sku,
+        name: i.name,
+        unitPrice: i.price,
+        quantity: i.quantity,
+      })),
+      total: totalPrice,
       freeShipping,
       shipping: form,
       placedAt: new Date().toISOString(),
@@ -48,14 +61,14 @@ export default function CheckoutPage() {
     // Stubbed — no backend yet.
     // eslint-disable-next-line no-console
     console.log('Order placed:', order);
+    setPlacedTotal(totalPrice);
+    setPlacedUnits(totalUnits);
     setPlaced(true);
+    clearCart();
   };
 
   return (
-    <main
-      className="min-h-screen bg-ink text-paper"
-      data-theme="dark"
-    >
+    <main className="min-h-screen bg-ink text-paper" data-theme="dark">
       <div className="mx-auto max-w-5xl px-6 pb-24 pt-32 md:px-10 md:pt-40">
         <Link
           href="/#shop"
@@ -69,7 +82,9 @@ export default function CheckoutPage() {
         </h1>
 
         {placed ? (
-          <OrderPlaced quantity={quantity} total={total} />
+          <OrderPlaced units={placedUnits} total={placedTotal} />
+        ) : items.length === 0 ? (
+          <EmptyCart />
         ) : (
           <div className="mt-12 grid grid-cols-1 gap-12 md:grid-cols-12 md:gap-16">
             <form onSubmit={onSubmit} className="space-y-7 md:col-span-7">
@@ -116,7 +131,7 @@ export default function CheckoutPage() {
 
               <div className="pt-4">
                 <MagneticButton type="submit" variant="solid">
-                  Place order · {formatINR(total)}
+                  Place order · {formatINR(totalPrice)}
                 </MagneticButton>
               </div>
             </form>
@@ -126,31 +141,33 @@ export default function CheckoutPage() {
                 Order summary
               </p>
               <ul className="mt-6 space-y-4 font-body text-sm">
-                <li className="flex items-baseline justify-between">
-                  <span>
-                    Float Bites × <span className="tabular-nums">{quantity}</span>
-                  </span>
-                  <span className="tabular-nums">{formatINR(subtotal)}</span>
-                </li>
-                {subscribe && (
-                  <li className="flex items-baseline justify-between text-paper/65">
-                    <span>Subscribe &amp; save (15%)</span>
-                    <span className="tabular-nums">−{formatINR(savings)}</span>
+                {items.map((item) => (
+                  <li
+                    key={item.id}
+                    className="flex items-baseline justify-between"
+                  >
+                    <span>
+                      {item.name} ×{' '}
+                      <span className="tabular-nums">{item.quantity}</span>
+                    </span>
+                    <span className="tabular-nums">
+                      {formatINR(item.price * item.quantity)}
+                    </span>
                   </li>
-                )}
+                ))}
                 <li className="flex items-baseline justify-between text-paper/65">
                   <span>Shipping</span>
                   <span>{freeShipping ? 'Free' : 'Calculated next'}</span>
                 </li>
                 <li className="flex items-baseline justify-between border-t border-paper/15 pt-5 font-display text-2xl tracking-tight">
                   <span>Total</span>
-                  <span className="tabular-nums">{formatINR(total)}</span>
+                  <span className="tabular-nums">{formatINR(totalPrice)}</span>
                 </li>
               </ul>
 
-              {!freeShipping && (
+              {!freeShipping && remainingForFreeShipping > 0 && (
                 <p className="mt-6 font-body text-xs text-paper/45">
-                  Add {formatINR(FREE_SHIPPING_THRESHOLD - total)} for free shipping.
+                  Add {formatINR(remainingForFreeShipping)} for free shipping.
                 </p>
               )}
             </aside>
@@ -182,7 +199,30 @@ function Field({ label, ...rest }: FieldProps) {
   );
 }
 
-function OrderPlaced({ quantity, total }: { quantity: number; total: number }) {
+function EmptyCart() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      className="mt-16 max-w-xl"
+    >
+      <h2 className="font-display text-section tracking-tighter">
+        Cart&apos;s empty.
+      </h2>
+      <p className="mt-5 font-body text-base text-paper/70">
+        Pick up a pouch of Float Bites and come back.
+      </p>
+      <div className="mt-10">
+        <Link href="/#shop">
+          <MagneticButton variant="outline">Back to shop</MagneticButton>
+        </Link>
+      </div>
+    </motion.div>
+  );
+}
+
+function OrderPlaced({ units, total }: { units: number; total: number }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -197,14 +237,14 @@ function OrderPlaced({ quantity, total }: { quantity: number; total: number }) {
         Order placed.
       </h2>
       <p className="mt-6 font-body text-base text-paper/75">
-        {quantity} × Float Bites — {formatINR(total)}. The order payload was
-        logged to the console for now; wire this up to the commerce backend in
+        {units} unit{units === 1 ? '' : 's'} — {formatINR(total)}. The order
+        payload was logged to the console; wire this to the commerce backend in
         the next pass.
       </p>
       <div className="mt-10">
-        <MagneticButton variant="outline">
-          <Link href="/">Back to home</Link>
-        </MagneticButton>
+        <Link href="/">
+          <MagneticButton variant="outline">Back to home</MagneticButton>
+        </Link>
       </div>
     </motion.div>
   );

@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import Link from 'next/link';
 import { Wordmark } from './Wordmark';
-import { useCart } from '@/lib/store/cart';
+import { useCartStore, selectTotalItems } from '@/lib/store/cart';
 
 const LINKS = [
   { href: '/shop', label: 'Shop' },
@@ -21,7 +21,7 @@ export function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const cartCount = useCart((s) => s.quantity);
+  const cartCount = useCartStore(selectTotalItems);
 
   // Nav is only allowed to be transparent over the hero on the home
   // page. Every other route has content starting at the top, so the
