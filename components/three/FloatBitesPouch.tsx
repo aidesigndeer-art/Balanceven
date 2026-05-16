@@ -26,6 +26,13 @@ export interface FloatBitesPouchProps {
   scale?: number;
   /** Per-frame cursor influence in [-1, 1] each axis. */
   cursor?: { x: number; y: number };
+  /**
+   * If provided, the pouch reads target Y rotation from this ref on
+   * every frame instead of running its idle spin. Parents drive it
+   * from ScrollTrigger's `onUpdate` without triggering React renders.
+   * Cursor tilt still applies on top.
+   */
+  rotationYRef?: React.MutableRefObject<number>;
 }
 
 const POUCH_W = 1.7;
@@ -118,11 +125,12 @@ function useLabelTexture(url = '/textures/pouch-label.svg'): CanvasTexture | nul
   return texture;
 }
 
-function ProceduralPouch({
-  cursor,
-}: {
+interface InternalPouchProps {
   cursor: { x: number; y: number };
-}) {
+  rotationYRef?: React.MutableRefObject<number>;
+}
+
+function ProceduralPouch({ cursor, rotationYRef }: InternalPouchProps) {
   const groupRef = useRef<Group>(null);
   const matRef = useRef<ShaderMaterial>(null);
   const label = useLabelTexture();
@@ -141,7 +149,9 @@ function ProceduralPouch({
     smoothed.current.y = MathUtils.damp(smoothed.current.y, cursor.y, 4, dt);
 
     const g = groupRef.current;
-    const baseY = performance.now() * 0.00018; // slow idle spin
+    const baseY = rotationYRef
+      ? rotationYRef.current
+      : performance.now() * 0.00018; // slow idle spin
     g.rotation.y = baseY + smoothed.current.x * 0.18;
     g.rotation.x = -smoothed.current.y * 0.14;
     g.position.y = Math.sin(performance.now() * 0.0008) * 0.04;
@@ -165,7 +175,11 @@ function ProceduralPouch({
   );
 }
 
-function GlbPouch({ glbUrl, cursor }: { glbUrl: string; cursor: { x: number; y: number } }) {
+function GlbPouch({
+  glbUrl,
+  cursor,
+  rotationYRef,
+}: InternalPouchProps & { glbUrl: string }) {
   const { scene } = useGLTF(glbUrl);
   const groupRef = useRef<Group>(null);
   const matRef = useRef<ShaderMaterial | null>(null);
@@ -189,7 +203,10 @@ function GlbPouch({ glbUrl, cursor }: { glbUrl: string; cursor: { x: number; y: 
     smoothed.current.x = MathUtils.damp(smoothed.current.x, cursor.x, 4, dt);
     smoothed.current.y = MathUtils.damp(smoothed.current.y, cursor.y, 4, dt);
     const g = groupRef.current;
-    g.rotation.y = performance.now() * 0.00018 + smoothed.current.x * 0.18;
+    const baseY = rotationYRef
+      ? rotationYRef.current
+      : performance.now() * 0.00018;
+    g.rotation.y = baseY + smoothed.current.x * 0.18;
     g.rotation.x = -smoothed.current.y * 0.14;
     g.position.y = Math.sin(performance.now() * 0.0008) * 0.04;
     const mat = matRef.current as unknown as {
@@ -209,14 +226,15 @@ export function FloatBitesPouch({
   glbUrl,
   scale = 1,
   cursor = { x: 0, y: 0 },
+  rotationYRef,
 }: FloatBitesPouchProps) {
   return (
     <group scale={scale}>
       <Suspense fallback={null}>
         {glbUrl ? (
-          <GlbPouch glbUrl={glbUrl} cursor={cursor} />
+          <GlbPouch glbUrl={glbUrl} cursor={cursor} rotationYRef={rotationYRef} />
         ) : (
-          <ProceduralPouch cursor={cursor} />
+          <ProceduralPouch cursor={cursor} rotationYRef={rotationYRef} />
         )}
       </Suspense>
     </group>
