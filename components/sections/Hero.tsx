@@ -55,7 +55,7 @@ export function Hero() {
         </div>
 
         {/* Pouch column */}
-        <div className="relative h-[58vh] w-full md:col-span-5 md:h-auto md:py-20">
+        <div className="relative h-[58vh] w-full md:col-span-5 md:h-auto md:py-20 md:pr-8">
           <Scene className="absolute inset-0 h-full w-full">
             <FloatBitesPouch cursor={cursor} scale={1} />
           </Scene>

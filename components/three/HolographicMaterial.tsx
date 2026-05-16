@@ -60,14 +60,14 @@ const HolographicMaterialImpl = shaderMaterial(
     // Stand-up zip pouch silhouette in UV space.
     //   - Body: rounded rectangle (the bulk of the pouch front)
     //   - Tab:  short rounded rectangle above the body (hangtag area)
-    //   - Hole: small circular notch in the tab
+    //   - Hole: small circular notch in the tab — visible from hero camera
     //   - Gusset: slightly wider strip at the bottom hinting at the base
     float pouchSdf(vec2 uv) {
       vec2 p = uv - vec2(0.5, 0.5);
       float body   = sdRoundedBox(p - vec2(0.0, -0.05), vec2(0.42, 0.40), 0.05);
       float gusset = sdRoundedBox(p - vec2(0.0, -0.43), vec2(0.44, 0.04), 0.04);
       float tab    = sdRoundedBox(p - vec2(0.0,  0.41), vec2(0.20, 0.05), 0.025);
-      float hole   = length(uv - vec2(0.5, 0.92)) - 0.014;
+      float hole   = length(uv - vec2(0.5, 0.91)) - 0.022;
       float shape  = min(min(body, gusset), tab);
       return max(shape, -hole);
     }
@@ -98,15 +98,27 @@ const HolographicMaterialImpl = shaderMaterial(
     }
 
     // ---- Palette -------------------------------------------------------
-    // Pastel iridescent band. Cosine palette with a high baseline and a
-    // small amplitude so the result stays in [0.65, 0.95] per channel —
-    // soft blue / cyan / pink / magenta rather than primary RGB.
+    // Hand-tuned pastel LUT cycling through four stops in the cool half
+    // of the wheel — blue, cyan, pink, magenta — with smoothstep blending
+    // between segments. The earlier cosine palette let one channel slide
+    // into mint-green at certain phases; this stepped form stays strictly
+    // inside the brand band while keeping enough channel delta (~0.27)
+    // for the cycle to read across the surface.
     vec3 pastelIris(float t) {
-      vec3 a = vec3(0.80, 0.82, 0.88);  // base lightness (pastel center)
-      vec3 b = vec3(0.13, 0.10, 0.10);  // small amplitude
-      vec3 c = vec3(1.00, 1.00, 1.00);
-      vec3 d = vec3(0.00, 0.16, 0.38);  // phase offsets — biases toward cool
-      return a + b * cos(6.28318 * (c * t + d));
+      t = fract(t);
+      vec3 c0 = vec3(0.68, 0.78, 0.96);  // pastel blue
+      vec3 c1 = vec3(0.70, 0.94, 0.96);  // soft cyan
+      vec3 c2 = vec3(0.97, 0.82, 0.92);  // pale pink
+      vec3 c3 = vec3(0.85, 0.68, 0.94);  // soft magenta
+      float seg = t * 4.0;
+      float i = floor(seg);
+      float f = smoothstep(0.0, 1.0, fract(seg));
+      vec3 a, b;
+      if      (i < 1.0) { a = c0; b = c1; }
+      else if (i < 2.0) { a = c1; b = c2; }
+      else if (i < 3.0) { a = c2; b = c3; }
+      else              { a = c3; b = c0; }
+      return mix(a, b, f);
     }
 
     void main() {
@@ -121,14 +133,16 @@ const HolographicMaterialImpl = shaderMaterial(
       // ---- Color phase: view angle + coarse fbm + slow drift --------
       // Coarse drives the iridescent hue (large, smooth color blobs).
       // High-freq noise NEVER touches hue — only micro-brightness.
-      float coarse = fbm(vUv * 3.5);
+      // fbm dominates so the cycle visibly sweeps across the surface
+      // rather than reading as a single tone tied to the silhouette.
+      float coarse = fbm(vUv * 3.2);
       float micro  = vnoise(vUv * 80.0);
 
-      float t = (1.0 - NdotV) * 0.55
-              + coarse * 0.40
-              + uTime * 0.020
+      float t = (1.0 - NdotV) * 0.35
+              + coarse * 0.85
+              + uTime * 0.022
               + uHueShift
-              + (uCursor.x * 0.05 + uCursor.y * 0.03);
+              + (uCursor.x * 0.06 + uCursor.y * 0.04);
 
       vec3 foil = pastelIris(t) * uTint;
 
