@@ -211,7 +211,7 @@ function EmptyCart() {
         Cart&apos;s empty.
       </h2>
       <p className="mt-5 font-body text-base text-paper/70">
-        Pick up a pouch of Float Bites and come back.
+        Pick up a pouch of Fly Bites and come back.
       </p>
       <div className="mt-10">
         <Link href="/#shop">

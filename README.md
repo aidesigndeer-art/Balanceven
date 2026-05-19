@@ -1,6 +1,6 @@
 # balanceven-web
 
-Marketing site for **Balanceven** — D2C launch of *Float Bites*, "De-bloat & Digest" gummies.
+Marketing site for **Balanceven** — D2C launch of *Fly Bites*, "Energy" gummies (18 count).
 
 ## Stack
 - Next.js 14 (App Router) + TypeScript
@@ -48,17 +48,18 @@ scripts/
 ```
 
 ## Swapping the placeholder pouch with a real `.glb`
-`<FloatBitesPouch />` accepts a `glbUrl` prop. Drop a Draco-compressed `.glb` into `/public/models/`, then:
+`<FlyBitesPouch />` accepts a `glbUrl` prop. Drop a Draco-compressed `.glb` into `/public/models/`, then:
 ```tsx
-<FloatBitesPouch glbUrl="/models/pouch.glb" />
+<FlyBitesPouch glbUrl="/models/pouch.glb" />
 ```
 The shader pipeline (holographic foil + label texture) attaches automatically.
 
-## Regenerating the wordmark
+## Regenerating the wordmark + pouch label
 ```bash
 pnpm wordmark
+node scripts/build-pouch-label.mjs
 ```
-Reads `_brief/coolvetica/Coolvetica Rg.otf`, emits black + white wordmarks to `/public/logo/`.
+First reads `_brief/coolvetica/Coolvetica Rg.otf` and emits black + white wordmarks to `/public/logo/`. The second bakes the Fly Bites front + back label art to `/public/textures/pouch-label.svg`, which the pouch component rasterizes onto its UV map at runtime.
 
 ## License
 Source code: proprietary, © 2026 Balanceven.

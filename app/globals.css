@@ -2,8 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Coolvetica — Webfont licensed for live HTML use.
+   Self-hosted from /public/fonts/. Fallback to Space Grotesk Variable
+   while Coolvetica loads (font-display: swap) so text never goes invisible. */
+@font-face {
+  font-family: 'Coolvetica';
+  src: url('/fonts/coolvetica.otf') format('opentype');
+  font-display: swap;
+  font-weight: 400;
+  font-style: normal;
+}
+
 :root {
-  --font-display: 'Space Grotesk Variable', system-ui, sans-serif;
+  --font-display: 'Coolvetica', 'Space Grotesk Variable', system-ui, sans-serif;
   --font-body: 'Inter Variable', system-ui, sans-serif;
   --bg: #000000;
   --fg: #ffffff;
@@ -25,6 +36,27 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
+}
+
+/* Lenis smooth scroll — disables native scrolling on the html
+   element so Lenis can drive position via transform. The
+   `data-lenis-prevent` attribute on any scrollable inner element
+   opts it out, letting modals or code blocks scroll normally. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
 }
 
 /* Override per section using data-theme */
@@ -59,6 +91,17 @@ button {
   border: 0;
   padding: 0;
   cursor: pointer;
+}
+
+/* Marquee text band animation — the strip is two identical halves
+   wide, animation translates exactly one half so the seam is invisible. */
+@keyframes marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
 }
 
 /* Respect reduced motion preference globally — section-level fallbacks override */

@@ -37,3 +37,7 @@ pnpm-debug.log*
 # Coolvetica OTF in particular is licensed for desktop use only
 # (see Typodermic EULA in _brief/coolvetica/) — do not commit.
 _brief/
+.stfolder/
+.stfolder.removed*/
+.claude/
+.syncthing/

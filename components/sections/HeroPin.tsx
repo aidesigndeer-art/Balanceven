@@ -3,10 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Scene } from '@/components/three/Scene';
-import { FloatBitesPouch } from '@/components/three/FloatBitesPouch';
+import { FlyBitesPouch } from '@/components/three/FlyBitesPouch';
 
-const HEADLINES = ['Bloat, gone.', 'Digestion, dialed in.', 'Float Bites.'] as const;
+const HEADLINES = ['Crash, gone.', 'Energy, dialed in.', 'Fly Bites.'] as const;
 
 /**
  * For a given scroll progress in [0, 1], return the headline at `index`
@@ -145,12 +144,10 @@ export function HeroPin() {
           </div>
         </div>
 
-        {/* Pouch column — same canvas geometry as the hero, driven by
-            rotationRef instead of its idle spin. */}
+        {/* Pouch column — photo crossfade driven by rotationRef.
+            0 → 120° maps to front → three-quarter → side angle. */}
         <div className="relative h-[58vh] w-full md:col-span-5 md:h-full md:py-20 md:pr-8">
-          <Scene className="absolute inset-0 h-full w-full">
-            <FloatBitesPouch rotationYRef={rotationRef} />
-          </Scene>
+          <FlyBitesPouch rotationYRef={rotationRef} />
         </div>
       </div>
     </section>

@@ -3,15 +3,16 @@ import '@fontsource-variable/space-grotesk';
 import '@fontsource-variable/inter';
 import { ThemeProvider } from '@/lib/theme';
 import { Nav } from '@/components/ui/Nav';
+import { SmoothScroll } from '@/components/ui/SmoothScroll';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Float Bites by balanceven — De-bloat & Digest',
-  description: 'Plant-based gummies engineered for the gut. Float through your day.',
+  title: 'Fly Bites by balanceven — Energy gummies',
+  description: 'Plant-based energy gummies. Clean lift, no crash. Fly through your day.',
   metadataBase: new URL('https://balanceven.com'),
   openGraph: {
-    title: 'Float Bites by balanceven',
-    description: 'De-bloat & digest gummies, engineered for the gut.',
+    title: 'Fly Bites by balanceven',
+    description: 'Energy gummies, engineered to lift you cleanly. 18 count.',
     type: 'website',
   },
   icons: { icon: '/favicon.ico' },
@@ -32,8 +33,10 @@ export default function RootLayout({
     <html lang="en" data-theme="dark">
       <body>
         <ThemeProvider initial="dark">
-          <Nav />
-          {children}
+          <SmoothScroll>
+            <Nav />
+            {children}
+          </SmoothScroll>
         </ThemeProvider>
       </body>
     </html>

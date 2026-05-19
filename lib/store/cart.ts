@@ -102,7 +102,14 @@ export const useCartStore = create<CartState>()(
 export const UNIT_PRICE_INR = 111;
 export const SUBSCRIBE_DISCOUNT = 0.15;
 export const FREE_SHIPPING_THRESHOLD = 500;
-export const FLOAT_BITES_SKU = 'float-bites-10ct';
+export const FLY_BITES_SKU = 'fly-bites-18ct';
+
+/**
+ * @deprecated Renamed to FLY_BITES_SKU when the line moved from Float
+ * Bites (de-bloat) to Fly Bites (energy). Kept as a re-export so any
+ * persisted cart rows from the old SKU continue to resolve on read.
+ */
+export const FLOAT_BITES_SKU = FLY_BITES_SKU;
 
 // ─── Selectors ───────────────────────────────────────────────────────────
 // Use these with `useCartStore(selector)` for stable references and to

@@ -2,11 +2,10 @@
 
 import { useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Scene } from '@/components/three/Scene';
-import { FloatBitesPouch } from '@/components/three/FloatBitesPouch';
+import { FlyBitesPouch } from '@/components/three/FlyBitesPouch';
 import { useCursor } from '@/lib/hooks/useCursor';
 
-const HEADLINE_LINES = ['Float through', 'your day.'] as const;
+const HEADLINE_LINES = ['Bite into', 'balance.'] as const;
 
 export function Hero() {
   const heroRef = useRef<HTMLElement>(null);
@@ -50,15 +49,17 @@ export function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 1.95, ease: 'easeOut' }}
           >
-            De-bloat &amp; digest gummies, engineered for the gut.
+            Energy gummies, engineered for the lift. 18 count.
           </motion.p>
         </div>
 
-        {/* Pouch column */}
-        <div className="relative h-[58vh] w-full md:col-span-5 md:h-auto md:py-20 md:pr-8">
-          <Scene className="absolute inset-0 h-full w-full">
-            <FloatBitesPouch cursor={cursor} scale={1} />
-          </Scene>
+        {/* Pouch column — photo composite, no R3F here.
+            Explicit height required: the photo component is absolutely
+            positioned inside this wrapper, so without a definite block
+            size the wrapper collapses to just its padding. The entrance
+            fade-in lives on the photo component itself now. */}
+        <div className="relative h-[70vh] w-full md:col-span-5 md:h-screen md:max-h-[800px] md:py-12">
+          <FlyBitesPouch cursor={cursor} scale={1} />
         </div>
       </div>
 

@@ -4,7 +4,7 @@ import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import { Scene } from '@/components/three/Scene';
-import { FloatBitesPouch } from '@/components/three/FloatBitesPouch';
+import { FlyBitesPouch } from '@/components/three/FlyBitesPouch';
 import { FlyingGummies } from '@/components/three/FlyingGummies';
 import { MagneticButton } from '@/components/ui/MagneticButton';
 import {
@@ -12,15 +12,15 @@ import {
   selectTotalPrice,
   UNIT_PRICE_INR,
   FREE_SHIPPING_THRESHOLD,
-  FLOAT_BITES_SKU,
+  FLY_BITES_SKU,
 } from '@/lib/store/cart';
 import { useCursor } from '@/lib/hooks/useCursor';
 
 const formatINR = (rupees: number) => `₹${rupees.toLocaleString('en-IN')}`;
 
-const FLOAT_BITES_ITEM = {
-  sku: FLOAT_BITES_SKU,
-  name: 'Float Bites',
+const FLY_BITES_ITEM = {
+  sku: FLY_BITES_SKU,
+  name: 'Fly Bites',
   price: UNIT_PRICE_INR,
 } as const;
 
@@ -52,12 +52,12 @@ export function Shop() {
   );
 
   const onAddToCart = () => {
-    addItem({ ...FLOAT_BITES_ITEM, quantity });
-    alert(`Added ${quantity} × Float Bites to cart`);
+    addItem({ ...FLY_BITES_ITEM, quantity });
+    alert(`Added ${quantity} × Fly Bites to cart`);
   };
 
   const onBuyNow = () => {
-    addItem({ ...FLOAT_BITES_ITEM, quantity });
+    addItem({ ...FLY_BITES_ITEM, quantity });
     router.push('/checkout');
   };
 
@@ -70,28 +70,31 @@ export function Shop() {
       aria-labelledby="shop-heading"
     >
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-12 px-6 md:grid-cols-12 md:gap-8 md:px-10">
-        {/* Pouch + gummies */}
+        {/* Pouch + gummies.
+            FlyingGummies still uses R3F so we keep a transparent Canvas
+            *behind* the photo pouch — the gummies drift in 3D while the
+            real-photo pouch sits in front of them. */}
         <div className="relative h-[60vh] w-full md:col-span-6 md:h-[78vh]">
           <Scene className="absolute inset-0 h-full w-full">
-            <FloatBitesPouch cursor={cursor} scale={0.95} />
             <FlyingGummies cursor={cursor} />
           </Scene>
+          <FlyBitesPouch cursor={cursor} scale={0.95} />
         </div>
 
         {/* Product card */}
         <div className="flex flex-col justify-center md:col-span-6 md:py-12">
           <p className="font-body text-[11px] uppercase tracking-[0.28em] text-paper/60">
-            10 count · de-bloat &amp; digest
+            18 count · energy
           </p>
           <h2
             id="shop-heading"
             className="mt-4 font-display text-section tracking-tighter"
           >
-            Float Bites
+            Fly Bites
           </h2>
           <p className="mt-3 max-w-md font-body text-base text-paper/75">
-            Plant-based gummies, chewed after a meal. Twelve actives, no sugar
-            crash.
+            Plant-based gummies, chewed before work, training, or anything that
+            needs lift. Clean caffeine, B-complex, adaptogens. No sugar crash.
           </p>
 
           <div className="mt-10 flex items-baseline gap-4">
