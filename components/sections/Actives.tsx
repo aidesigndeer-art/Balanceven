@@ -201,7 +201,7 @@ export function Actives() {
               >
                 {/* Index — huge tabular number on the left. */}
                 <div className="md:col-span-5">
-                  <div className="font-display text-[clamp(7rem,18vw,16rem)] leading-[0.85] tracking-tightest tabular-nums">
+                  <div className="font-display text-[clamp(7rem,18vw,16rem)] tabular-nums">
                     {a.index}
                     <span className="ml-2 align-top font-display text-2xl tracking-tight text-paper/45 md:text-3xl">
                       /{String(ACTIVES.length).padStart(2, '0')}

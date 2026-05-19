@@ -71,7 +71,7 @@ export function Outro() {
           {STACK_LINES.map((line, i) => (
             <span
               key={line}
-              className="block overflow-hidden leading-[0.88]"
+              className="block overflow-hidden"
             >
               <span
                 ref={(el) => {

@@ -17,14 +17,16 @@ const config: Config = {
         body: ['var(--font-body)', 'system-ui', 'sans-serif'],
       },
       letterSpacing: {
-        tightest: '-0.04em',
-        tighter: '-0.03em',
-        tight: '-0.02em',
+        // All set to natural (0) — matches the Coolvetica wordmark SVG
+        // which uses opentype.js native kerning with no CSS overrides.
+        tightest: '0',
+        tighter: '0',
+        tight: '0',
       },
       fontSize: {
         'hero': ['clamp(3.5rem, 9vw, 8.5rem)', { lineHeight: '1', letterSpacing: '0' }],
-        'mega': ['clamp(3rem, 10vw, 9rem)', { lineHeight: '0.9', letterSpacing: '-0.03em' }],
-        'section': ['clamp(2.5rem, 7vw, 6rem)', { lineHeight: '0.95', letterSpacing: '-0.02em' }],
+        'mega': ['clamp(3rem, 10vw, 9rem)', { lineHeight: '1', letterSpacing: '0' }],
+        'section': ['clamp(2.5rem, 7vw, 6rem)', { lineHeight: '1', letterSpacing: '0' }],
       },
       transitionTimingFunction: {
         'silk': 'cubic-bezier(0.22, 1, 0.36, 1)',

@@ -100,7 +100,7 @@ export function HeroPin() {
             {HEADLINES.map((h, i) => (
               <li
                 key={i}
-                className="font-display text-mega leading-[0.92] tracking-tighter"
+                className="font-display text-mega"
               >
                 {h}
               </li>
@@ -129,7 +129,7 @@ export function HeroPin() {
                 ref={(el) => {
                   headlineRefs.current[i] = el;
                 }}
-                className="font-display text-mega leading-[0.92] tracking-tighter"
+                className="font-display text-mega"
                 style={{
                   gridColumn: '1 / 2',
                   gridRow: '1 / 2',

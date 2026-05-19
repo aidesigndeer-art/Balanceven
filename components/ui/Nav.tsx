@@ -128,7 +128,7 @@ export function Nav() {
                 >
                   <Link
                     href={l.href}
-                    className="block font-display text-mega leading-[0.9] tracking-tighter text-paper"
+                    className="block font-display text-mega text-paper"
                     onClick={() => setOpen(false)}
                   >
                     {l.label}
