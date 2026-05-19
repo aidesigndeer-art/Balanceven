@@ -1,6 +1,7 @@
 import { Loader } from '@/components/ui/Loader';
 import { Marquee } from '@/components/ui/Marquee';
 import { Hero } from '@/components/sections/Hero';
+import { Reveal } from '@/components/sections/Reveal';
 import { HeroPin } from '@/components/sections/HeroPin';
 import { Actives } from '@/components/sections/Actives';
 import { Shop } from '@/components/sections/Shop';
@@ -23,6 +24,8 @@ export default function Page() {
         <Hero />
         {/* Transition strip between Hero and the pinned scroll act */}
         <Marquee items={HERO_MARQUEE} duration={32} />
+        {/* Sensory threshold — scroll-scrubbed iridescent crystal reveal */}
+        <Reveal />
         <HeroPin />
         <Actives />
         <Shop />
