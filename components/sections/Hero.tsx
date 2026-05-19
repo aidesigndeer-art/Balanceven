@@ -20,12 +20,11 @@ export function Hero() {
       <div className="mx-auto grid min-h-screen max-w-7xl grid-cols-1 px-6 pt-24 md:grid-cols-12 md:gap-8 md:px-10 md:pt-0">
         {/* Type column */}
         <div className="relative z-10 flex flex-col justify-center md:col-span-7 md:py-32">
-          <h1 className="font-display text-hero tracking-tight">
+          <h1 className="font-display text-hero">
             {HEADLINE_LINES.map((line, i) => (
               <span
                 key={i}
                 className="block overflow-hidden"
-                style={{ lineHeight: 1 }}
               >
                 <motion.span
                   className="block"
