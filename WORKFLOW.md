@@ -3,6 +3,44 @@
 This file is the source of truth for how we ship changes to balanceven.vercel.app.
 It's read by Claude at the start of every Cowork session so the workflow stays consistent.
 
+## ⚠️ ABSOLUTE SAFETY RULES — non-negotiable
+
+These rules override anything else. Read them every session, every time.
+
+**1. Never touch files outside `/Users/siddharth/balanceven-web/`.**
+
+The user has personal documents, company files, and unrelated work in other folders on the laptop (`~/Desktop/`, `~/Documents/`, `~/Downloads/`, etc.). These are OFF LIMITS for any operation — no reads, no writes, no listings unless the user explicitly grants access for a specific task.
+
+**2. NEVER use `rm`, `rm -rf`, `rmdir`, `find -delete`, or any command that permanently deletes files. PERIOD.**
+
+These commands bypass macOS Trash and the deleted files **cannot be recovered through normal means** (no Trash, no undo). They are banned from every terminal command Claude suggests or runs.
+
+**The only acceptable way to remove a file or folder is to MOVE IT TO TRASH using `mv`:**
+
+```bash
+# CORRECT — moves to Trash, fully recoverable from Finder → Trash
+mv ~/path/to/folder ~/.Trash/
+
+# WRONG — never use these
+rm -rf ~/path/to/folder
+rm ~/path/to/file
+find ~/path -delete
+```
+
+`~/.Trash/` is the macOS Trash directory. Anything moved there appears in Finder's Trash and can be dragged back out anywhere on the system. This makes every "deletion" reversible.
+
+**3. Before suggesting ANY removal (even an `mv` to Trash), ask the user to confirm what's in the target folder.**
+
+Even if the folder name "looks obviously project-related" (e.g., a folder named `Balanceven`), it might be a personal folder with unrelated work. Always confirm. The right question: "Can you confirm `~/Desktop/Balanceven/` is the GitHub clone we created in this session, not a personal folder with unrelated files?"
+
+**4. `git rm` is OK for tracked files** because git history preserves them — they can be restored from any prior commit via `git checkout`. But `git rm` should still be done deliberately, on confirmed paths, never bundled into a chain command with destructive scope.
+
+**5. Never `rm -rf` even inside chained shell commands** — including patterns like `rm -rf X 2>/dev/null; do_next_step` that try to "silently clear" something. The silencing makes the failure invisible; if the wrong folder is named, there's no error feedback and the loss is total.
+
+**6. When in doubt, ask.** A 10-second clarifying question is always cheaper than data loss.
+
+---
+
 ## The one rule
 
 **Only the laptop (Siddharth's MacBook Air) pushes to GitHub. Period.**
